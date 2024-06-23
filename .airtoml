@@ -1,0 +1,21 @@
+root = "."
+tmp_dir = "tmp"
+[build]
+  bin = "./tmp/main"
+  cmd = "go build -o ./tmp/main ."
+  include_ext = ["go", "tmpl", "html"]
+  exclude_dir = ["tmp", "vendor", "docs"]
+  exclude_file = []
+  follow_symlink = true
+  full_reload = false
+  log = "air_errors.log"
+[log]
+  color = true
+  timestamp = true
+[serve]
+  cmd = "./tmp/main"
+  grace = "5s"
+  ignore_errors = false
+  interval = 1000
+  shell = "sh"
+  watch_delay = 500

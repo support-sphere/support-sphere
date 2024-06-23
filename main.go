@@ -1,70 +1,39 @@
-// cmd/server/main.go
 package main
 
 import (
-	"context"
 	"log"
-	"net"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"github.com/support-sphere/support-sphere/internal/infrastructure/di"
-	pb "github.com/support-sphere/support-sphere/proto"
-	"google.golang.org/grpc"
+	"github.com/gorilla/mux"
+	"github.com/support-sphere/support-sphere/internal/infrastructure/delivery/routes"
+	"github.com/support-sphere/support-sphere/internal/infrastructure/persistance"
 )
 
+// @title Helpdesk System Ticket API
+// @version 1.0
+// @description This is a helpdesk system ticket API.
+// @termsOfService http://swagger.io/terms/
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @host localhost:8080
+// @BasePath /v1
+
 func main() {
-	// Initialize dependencies
-	ticketServer, err := di.InitializeTicketServer()
+	db, err := persistance.NewPostgresDB("localhost", "5432", "root", "root", "support_sphere")
 	if err != nil {
-		log.Fatalf("failed to initialize ticket server: %v", err)
+		log.Fatalf("failed to connect to database: %v", err)
 	}
 
-	// gRPC server
-	grpcLis, err := net.Listen("tcp", ":50051")
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+	r := mux.NewRouter()
+
+	// Register routes
+	routes.RegisterRoutes(r, db)
+
+	log.Println("Starting server on :8080")
+	if err := http.ListenAndServe(":8080", r); err != nil {
+		log.Fatalf("failed to start server: %v", err)
 	}
-	grpcServer := grpc.NewServer()
-	pb.RegisterTicketServiceServer(grpcServer, ticketServer)
-
-	// HTTP server
-	httpServer := &http.Server{
-		Addr:    ":8080",
-		Handler: di.NewRouter(ticketServer.HTTPHandler),
-	}
-
-	// Channel to listen for errors
-	errs := make(chan error, 2)
-	go func() {
-		log.Printf("HTTP server listening on %s", httpServer.Addr)
-		errs <- httpServer.ListenAndServe()
-	}()
-	go func() {
-		log.Printf("gRPC server listening on %s", grpcLis.Addr())
-		errs <- grpcServer.Serve(grpcLis)
-	}()
-
-	// Graceful shutdown
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		<-c
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		grpcServer.GracefulStop()
-		if err := httpServer.Shutdown(ctx); err != nil {
-			log.Fatalf("HTTP server shutdown error: %v", err)
-		}
-
-		log.Println("Shutting down servers...")
-		os.Exit(0)
-	}()
-
-	log.Printf("Exiting: %v", <-errs)
 }
