@@ -5,7 +5,14 @@ go 1.22.1
 require github.com/spf13/viper v1.19.0
 
 require (
+	github.com/aymerick/douceur v0.2.0 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/google/wire v0.6.0 // indirect
+	github.com/gorilla/css v1.0.0 // indirect
+	github.com/leodido/go-urn v1.4.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
@@ -14,10 +21,12 @@ require (
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-chi/chi v1.5.5
+	github.com/go-playground/validator/v10 v10.22.0
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/lib/pq v1.10.9
 	github.com/magiconair/properties v1.8.7 // indirect
+	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
