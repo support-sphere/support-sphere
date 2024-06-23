@@ -58,3 +58,9 @@ func (r *TicketRepository) GetTicketByID(id int) (*domain.Ticket, error) {
 
 	return &t, nil
 }
+func (r *TicketRepository) GetTotalTickets() (int, error) {
+	query := "SELECT COUNT(*) FROM tickets"
+	var total int
+	err := r.db.QueryRow(query).Scan(&total)
+	return total, err
+}

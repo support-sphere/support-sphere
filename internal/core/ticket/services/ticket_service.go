@@ -36,3 +36,6 @@ func (s *TicketService) GetTickets(page, pageSize int) ([]domain.Ticket, error) 
 func (s *TicketService) GetTicketByID(id int) (*domain.Ticket, error) {
 	return s.repo.GetTicketByID(id)
 }
+func (s *TicketService) GetTotalTickets() (int, error) {
+	return s.repo.GetTotalTickets()
+}
