@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func loggerInfoCORS(h http.Handler) http.Handler {
+func LoggerInfoCORS(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("INFO: %s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
