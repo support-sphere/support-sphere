@@ -3,7 +3,13 @@ package delivery
 import (
 	"log"
 	"net/http"
+
+	"github.com/support-sphere/support-sphere/config"
 )
+
+type HTTP struct {
+	Config *config.Config
+}
 
 func LoggerInfoCORS(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -21,3 +27,13 @@ func LoggerInfoCORS(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r)
 	})
 }
+
+// func (h *HTTP) setupSwaggerDocs() {
+// 	if h.Config.Server.Env == "development" {
+// 		docs.SwaggerInfo.Title = h.Config.App.Name
+// 		docs.SwaggerInfo.Version = h.Config.App.Revision
+// 		swaggerURL := fmt.Sprintf("%s/swagger/doc.json", h.Config.App.URL)
+// 		h.mux.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(swaggerURL)))
+// 		log.Info().Str("url", swaggerURL).Msg("Swagger documentation enabled.")
+// 	}
+// }

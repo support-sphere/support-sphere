@@ -15,9 +15,12 @@ func RegisterRoutes(r *mux.Router, db *sql.DB) {
 }
 
 func registerV1Routes(r *mux.Router, db *sql.DB) {
-	ticketRepo := repoTicket.NewPostgresTicketRepository(db)
+	ticketRepo := repoTicket.NewTicketRepository(db)
 	ticketService := services.NewTicketService(ticketRepo)
 	ticketHandler := handlerTicket.NewTicketHandler(ticketService)
 
 	r.HandleFunc("/tickets", ticketHandler.CreateTicket).Methods("POST")
+	r.HandleFunc("/tickets", ticketHandler.GetTicketsHandler).Methods("GET")
+	r.HandleFunc("/tickets/{id:[0-9]+}", ticketHandler.GetTicketByIDHandler).Methods("GET")
+
 }

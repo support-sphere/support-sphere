@@ -30,3 +30,9 @@ func (s *TicketService) CreateTicket(title, description, status, createdBy strin
 
 	return ticket, nil
 }
+func (s *TicketService) GetTickets(page, pageSize int) ([]domain.Ticket, error) {
+	return s.repo.GetTickets(page, pageSize)
+}
+func (s *TicketService) GetTicketByID(id int) (*domain.Ticket, error) {
+	return s.repo.GetTicketByID(id)
+}
