@@ -3,94 +3,59 @@ package main
 import (
 	"context"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/gorilla/mux"
-	svcGrpc "github.com/support-sphere/support-sphere/internal/adapters/ticket/handler/grpc"
-	pb "github.com/support-sphere/support-sphere/internal/adapters/ticket/handler/grpc/pb"
-	"github.com/support-sphere/support-sphere/internal/infrastructure/delivery"
-	"github.com/support-sphere/support-sphere/internal/infrastructure/delivery/routes"
-	"github.com/support-sphere/support-sphere/internal/infrastructure/persistance"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jmoiron/sqlx"
+	https "github.com/support-sphere/support-sphere/internal/adapters/delivery/http"
+	"github.com/support-sphere/support-sphere/internal/adapters/delivery/http/handlers"
+	"github.com/support-sphere/support-sphere/internal/adapters/repositories"
+	"github.com/support-sphere/support-sphere/internal/app"
+	"github.com/support-sphere/support-sphere/internal/core/ticket"
+	"github.com/support-sphere/support-sphere/internal/core/user"
 )
 
-// @title Helpdesk System Ticket API
-// @version 1.0
-// @description This is a helpdesk system ticket API.
-// @termsOfService http://swagger.io/terms/
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-// @host localhost:8080
-// @BasePath /v1
-
 func main() {
-	db, err := persistance.NewPostgresDB("localhost", "5432", "root", "root", "support_sphere")
+	db, err := sqlx.Connect("pgx", "postgres://username:password@localhost:5432/yourdb?sslmode=disable")
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Fatal(err)
 	}
 
-	r := mux.NewRouter()
+	userRepo := repositories.NewPostgresUserRepository(db)
+	ticketRepo := repositories.NewTicketRepository(db)
 
-	// Register routes
-	routes.RegisterRoutes(r, db)
+	userService := user.NewService(userRepo)
+	ticketService := ticket.NewService(ticketRepo)
+
+	app := app.NewApp(*userService, *ticketService)
+	userHandler := handlers.NewUserHandler(app)
+	ticketHandler := handlers.NewTicketHandler(app)
+
+	router := https.NewRouter(userHandler, ticketHandler)
 
 	srv := &http.Server{
 		Addr:    ":8080",
-		Handler: delivery.LoggerInfoCORS(r),
+		Handler: router,
 	}
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
 
-	// Start the HTTP server in a goroutine
 	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			log.Fatalf("failed to start server: %v", err)
+		<-quit
+		log.Println("Shutting down server...")
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Fatalf("Could not gracefully shut down the server: %v\n", err)
 		}
+		log.Println("Server stopped")
 	}()
-
-	lis, err := net.Listen("tcp", ":50052") // Use a different port for gRPC server
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+	log.Println("Starting server on :8080")
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("Could not listen on :8080: %v\n", err)
 	}
-
-	grpcServer := grpc.NewServer()
-	ticketServer := svcGrpc.NewTicketServer(db)
-	pb.RegisterTicketServiceServer(grpcServer, ticketServer)
-	reflection.Register(grpcServer)
-
-	log.Println("Starting gRPC server...")
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to start gRPC server: %v", err)
-	}
-
-	log.Println("Server is running on :8080")
-
-	// Create a channel to listen for the shutdown signal
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
-
-	// Block until a signal is received
-	<-stop
-
-	// Create a context with a timeout for the shutdown
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// Shutdown the HTTP server
-	log.Println("Shutting down HTTP server...")
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("error shutting down HTTP server: %v", err)
-	}
-
-	// Shutdown the gRPC server
-	log.Println("Shutting down gRPC server...")
-	grpcServer.GracefulStop()
-
-	log.Println("Server shutdown complete")
 }
