@@ -21,7 +21,12 @@ func StartServer(db *sql.DB) {
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
-	router := https.NewRouter(userHandler)
+
+	ticketRepo := repository.NewTicketRepository(db)
+	ticketService := service.NewTicketService(ticketRepo)
+	ticketHandler := handlers.NewTicketHandler(ticketService)
+
+	router := https.NewRouter(userHandler, ticketHandler)
 
 	server := &http.Server{
 		Addr:         ":8080",

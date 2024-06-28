@@ -23,7 +23,7 @@ CREATE TABLE users (
 );
 
 CREATE TABLE tickets (
-    ticket_id UUID PRIMARY KEY,
+    ticket_id string PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     status ticket_status NOT NULL,
@@ -44,21 +44,21 @@ CREATE TABLE departments (
 
 CREATE TABLE ticket_interactions (
     interaction_id UUID PRIMARY KEY,
-    ticket_id UUID REFERENCES tickets(ticket_id),
+    ticket_id string REFERENCES tickets(ticket_id),
     user_id UUID REFERENCES users(user_id),
     message TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE ticket_tags (
-    ticket_id UUID REFERENCES tickets(ticket_id),
+    ticket_id string REFERENCES tickets(ticket_id),
     tag VARCHAR(255) NOT NULL,
     PRIMARY KEY (ticket_id, tag)
 );
 
 CREATE TABLE attachments (
     attachment_id UUID PRIMARY KEY,
-    ticket_id UUID REFERENCES tickets(ticket_id),
+    ticket_id string REFERENCES tickets(ticket_id),
     file_path VARCHAR(255) NOT NULL,
     uploaded_by UUID REFERENCES users(user_id),
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -66,7 +66,7 @@ CREATE TABLE attachments (
 
 CREATE TABLE ticket_history (
     history_id UUID PRIMARY KEY,
-    ticket_id UUID REFERENCES tickets(ticket_id),
+    ticket_id string REFERENCES tickets(ticket_id),
     status ticket_status NOT NULL,
     changed_by UUID REFERENCES users(user_id),
     changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
